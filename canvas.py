@@ -2,6 +2,8 @@
 
 import tkinter as tk
 from math import sqrt
+from time import sleep
+from functools import partial
 
 MAX_COMPRESSION_ERROR = 1.2
 
@@ -151,16 +153,31 @@ def stop_draw(event):
     staged.clear()
     plot()
 
+def tick(npos):
+    global pos
+    pos = npos
+    plot()
+
+def moveto(new, dt=200):
+    global pos
+    steps = int(dt*30/1000)
+    base = pos
+    dx = (new[0]-pos[0])/steps
+    dy = (new[1]-pos[1])/steps
+    for i in range(1, steps+1):
+        npos = (base[0]+i*dx, base[1]+i*dy)
+        f = partial(tick, npos=npos)
+        f.__name__ = ""
+        master.after(i*dt//steps, f)
+
 def next_frame(event):
     global pos
     if frames.next():
-        pos = frames.current_frame.origin
-    plot()
+        moveto(frames.current_frame.origin)
 def prev_frame(event):
     global pos
     if frames.prev():
-        pos = frames.current_frame.origin
-    plot()
+        moveto(frames.current_frame.origin)
 
 master = tk.Tk()
 canvas = tk.Canvas(master)
