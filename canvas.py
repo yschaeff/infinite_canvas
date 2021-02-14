@@ -107,7 +107,7 @@ def plot():
     def plot_path(path, origin, pos):
         for p1, p2 in pairs(path, loop=False):
             obj_id = canvas.create_line(*translate(p1, origin, pos),
-                    *translate(p2, origin, pos), fill="#c2d81b", width=8)
+                    *translate(p2, origin, pos), fill="#c2d81b", width=12)
             #print(obj_id)
     plot_path(staged, pos, pos)
 
@@ -153,31 +153,29 @@ def stop_draw(event):
     staged.clear()
     plot()
 
-def tick(npos):
+def moveto(newpos):
     global pos
-    pos = npos
+    pos = newpos
     plot()
 
-def moveto(new, dt=200):
+def moveto_animate(newpos, dt=200):
     global pos
     steps = int(dt*30/1000)
     base = pos
-    dx = (new[0]-pos[0])/steps
-    dy = (new[1]-pos[1])/steps
+    dx = (newpos[0]-pos[0])/steps
+    dy = (newpos[1]-pos[1])/steps
     for i in range(1, steps+1):
         npos = (base[0]+i*dx, base[1]+i*dy)
-        f = partial(tick, npos=npos)
+        f = partial(moveto, newpos=npos)
         f.__name__ = ""
         master.after(i*dt//steps, f)
 
 def next_frame(event):
-    global pos
     if frames.next():
-        moveto(frames.current_frame.origin)
+        moveto_animate(frames.current_frame.origin)
 def prev_frame(event):
-    global pos
     if frames.prev():
-        moveto(frames.current_frame.origin)
+        moveto_animate(frames.current_frame.origin)
 
 master = tk.Tk()
 canvas = tk.Canvas(master)
