@@ -21,15 +21,11 @@ def error(f, m, l):
         return 0
 
 def simplify(path, max_error):
-    start = 0
-    end = 2
+    start, end = 0, 2
     while end < len(path):
-        inline = True
-        for m in path[start+1: end]:
-            inline = (error(path[start], m, path[end]) <= max_error)
-            if not inline:
-                break
-        if inline and end+1 < len(path):
+        M = path[start+1: end]
+        m = map(lambda mi: error(path[start], mi, path[end]) <= max_error, M)
+        if all(m) and end+1 < len(path):
             end += 1
             continue ## try adding another one!
         ## remove all between start and previous end
