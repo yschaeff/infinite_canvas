@@ -1,24 +1,17 @@
 #!/usr/bin/env python3
 
 import tkinter as tk
+from math import sqrt
 
-COMPRESSION = 5
+MAX_COMPRESSION_ERROR = 1.2
+
+def line_point_distance(p1, p2, p):
+    return abs((p2[0]-p1[0])*(p1[1]-p[1]) - (p1[0]-p[0])*(p2[1]-p1[1])) / sqrt( (p2[0] - p1[0])**2 + (p2[1]-p1[1])**2 )
 
 def error(f, m, l):
-    fx, fy = f
-    mx, my = m
-    lx, ly = l
-    dx, dy = lx-fx, ly-fy
-    if dx != 0:
-        slope = dy/dx
-        y = fy + slope * (fx-mx)
-        return abs(round(y) - my)
-    elif dy != 0:
-        slope = dx/dy
-        x = fx + slope * (fy-my)
-        return abs(round(x) - mx)
-    else:
-        return 0
+    dx, dy = l[0]-f[0], l[1]-f[1]
+    if dx == 0 and dy == 0: return 0
+    return line_point_distance(f, l, m)
 
 def simplify(path, max_error):
     start, end = 0, 2
@@ -40,9 +33,7 @@ class Frame():
         self.paths = []
         #atime, mtime
     def add_path(self, path):
-        print("before:", len(path))
-        simplify(path, COMPRESSION)
-        print("after:", len(path))
+        simplify(path, MAX_COMPRESSION_ERROR)
         self.paths.append(path)
     def render(self, pos):
         if self.origin != pos:
@@ -53,6 +44,8 @@ class Frame():
             for p1, p2 in pairs(path, loop=False):
                 _ = canvas.create_line(*translate(p1, self.origin, pos),
                         *translate(p2, self.origin, pos), fill=color, width=5)
+                #_ = canvas.create_oval(*translate(p1, self.origin, pos),
+                        #*translate(p2, self.origin, pos), width=1)
 
 class FrameCollection:
     def __init__(self):
@@ -113,7 +106,7 @@ def plot():
         for p1, p2 in pairs(path, loop=False):
             obj_id = canvas.create_line(*translate(p1, origin, pos),
                     *translate(p2, origin, pos), fill="#c2d81b", width=8)
-            print(obj_id)
+            #print(obj_id)
     plot_path(staged, pos, pos)
 
 def undo(event):
