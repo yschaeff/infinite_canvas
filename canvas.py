@@ -2,34 +2,40 @@
 
 import tkinter as tk
 
-COMPRESSION = 200
+COMPRESSION = 5
 
-def inline(f, m, l, compression):
+def error(f, m, l):
     fx, fy = f
     mx, my = m
     lx, ly = l
-    dx = lx-fx
-    dy = ly-fy
-    if dx > 0:
+    dx, dy = lx-fx, ly-fy
+    if dx != 0:
         slope = dy/dx
         y = fy + slope * (fx-mx)
-        return abs(round(y) - my) < compression
-    elif dy < 0:
+        return abs(round(y) - my)
+    elif dy != 0:
         slope = dx/dy
         x = fx + slope * (fy-my)
-        return abs(round(x) - mx) < compression
+        return abs(round(x) - mx)
     else:
-        return True
+        return 0
 
-def simplify(path, compression):
-    ## take trio, draw a line between first and last. Does middle render
-    ## on line?
-    i = 0
-    while i <len(path)-2:
-        f,m,l = path[i:i+3]
-        if inline(f, m, l, compression):
-            path.pop(i+1)
-        i += 1
+def simplify(path, max_error):
+    start = 0
+    end = 2
+    while end < len(path):
+        inline = True
+        for m in path[start+1: end]:
+            inline = (error(path[start], m, path[end]) <= max_error)
+            if not inline:
+                break
+        if inline and end+1 < len(path):
+            end += 1
+            continue ## try adding another one!
+        ## remove all between start and previous end
+        for i in range(end - start - 2): path.pop(start+1)
+        start += 1
+        end = start + 2
 
 class Frame():
     def __init__(self, origin):
