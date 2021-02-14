@@ -2,6 +2,35 @@
 
 import tkinter as tk
 
+COMPRESSION = 200
+
+def inline(f, m, l, compression):
+    fx, fy = f
+    mx, my = m
+    lx, ly = l
+    dx = lx-fx
+    dy = ly-fy
+    if dx > 0:
+        slope = dy/dx
+        y = fy + slope * (fx-mx)
+        return abs(round(y) - my) < compression
+    elif dy < 0:
+        slope = dx/dy
+        x = fx + slope * (fy-my)
+        return abs(round(x) - mx) < compression
+    else:
+        return True
+
+def simplify(path, compression):
+    ## take trio, draw a line between first and last. Does middle render
+    ## on line?
+    i = 0
+    while i <len(path)-2:
+        f,m,l = path[i:i+3]
+        if inline(f, m, l, compression):
+            path.pop(i+1)
+        i += 1
+
 class Frame():
     def __init__(self, origin):
         print("new frame")
@@ -9,7 +38,9 @@ class Frame():
         self.paths = []
         #atime, mtime
     def add_path(self, path):
-        #simplify(path)
+        print("before:", len(path))
+        simplify(path, COMPRESSION)
+        print("after:", len(path))
         self.paths.append(path)
     def render(self, pos):
         if self.origin != pos:
