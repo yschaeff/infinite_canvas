@@ -1,5 +1,31 @@
 #!/usr/bin/env python3
 
+## How it SHOULD work
+# we start in point 0,0,1
+# we define screenwidth_pixels/2 = 1. That way we can at any zoom level work
+# out what a shift of n pixels means. We simply scale it by current zoom level.
+# 
+# every stroke is a path. strokes at the same location will belong to the same
+# frame. A frame has a position x,y,z and a rotation. Strokes have 2D coordinates
+# relative to the frame.
+
+#strokes have width, color and style
+#frames have atime and mtime
+
+# stroke width will be scaled to relative zoom level
+
+#there shall be a current location (pos, zoom, angle)
+#there shall be a current frame, or None
+#drawing shall happen on current frame, or a new frame created if none.
+
+# - delete frames
+# - delete paths
+# - modify path (color, width)
+# - saves are implicit
+# - add dog ears and bookmarks
+# - set start location
+# - palette with colors in frame
+
 import tkinter as tk
 from math import sqrt
 from time import sleep
