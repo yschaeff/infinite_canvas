@@ -38,14 +38,25 @@ class Viewport:
         """True if self is visible from viewport"""
         return True
 
+def circle(point, radius):
+    xm = point[0]-radius
+    xp = point[0]+radius
+    ym = point[1]-radius
+    yp = point[1]+radius
+    return xm, ym, xp, yp
+
 class Stroke:
-    def __init__(self, path, color, style):
+    def __init__(self, path, color, style=None, width=10):
         self.path = path
         self.color = color
         self.style = style
-    def render(self, canvas, vieport):
+        self.width = width
+    def render(self, canvas, vieport, draft=False):
+        if draft and self.path:
+            obj_id = canvas.create_oval(*circle(self.path[0],  10), fill="#BC347F", width=self.width*3)
+            obj_id = canvas.create_oval(*circle(self.path[-1], 10), fill="#BC347F", width=self.width*3)
         for p1, p2 in pairs(self.path, loop=False):
-            obj_id = canvas.create_line(*p1, *p2, fill=self.color, width=3)
+            obj_id = canvas.create_line(*p1, *p2, fill=self.color, width=self.width)
 
 class Frame:
     def __init__(self, viewport):
@@ -96,17 +107,18 @@ class Data:
             frame.render(canvas, self.current_viewport)
 
 class Sketch:
+    width = 3
+    color = "#BCB534"
     def __init__(self):
-        self.stroke = Stroke([], "#BCB534", None)
+        self.stroke = Stroke([], Sketch.color, width=Sketch.width)
     def push(self, x, y):
         self.stroke.path.append( (x,y) )
     def blit(self, frame):
-        print(f"Adding stroke {id(self.stroke)} to frame {id(frame)}")
+        print(f"Adding stroke {id(self.stroke)} to frame {id(frame)}. len: {len(self.stroke.path)}")
         frame.drawables.append(self.stroke)
-        self.stroke = Stroke([], "#BCB534", None)
+        self.stroke = Stroke([], Sketch.color, width=Sketch.width)
     def render(self, canvas):
-        for p1, p2 in pairs(self.stroke.path, loop=False):
-            obj_id = canvas.create_line(*p1, *p2, fill="#BC347F", width=12)
+        self.stroke.render(canvas, None, draft=True)
 
 def quit(event, context):
     context.root.quit()
@@ -135,9 +147,8 @@ def stop_draw(event, context):
 
 class Context:
     def __init__(self, data):
-        self.root = tk.Tk()
-        self.canvas = tk.Canvas(self.root)
-        self.canvas.configure(bg='#242424')
+        self.root = None
+        self.canvas = None
         self.data = data
         self.sketch = Sketch()
     def redraw(self):
@@ -146,6 +157,15 @@ class Context:
         self.sketch.render(self.canvas)
 
 def init_gui(context):
+    context.root = tk.Tk()
+
+    #labelExample = tk.Label(context.root, text="This is a Label")
+    #labelExample.pack()
+
+    context.canvas = tk.Canvas(context.root)
+    context.canvas.configure(bg='#242424')
+    context.canvas.pack()
+
     context.canvas.pack(expand = True, fill = tk.BOTH)
     context.canvas.bind_all("<Key-q>", partial(quit, context=context))
     context.canvas.bind_all("<Key-d>", partial(delete_frame, context=context))
