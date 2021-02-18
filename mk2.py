@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import time, pickle
 import tkinter as tk
+from tkinter import colorchooser, Button
 from functools import partial
 
 PICKLE_FILE = "canvas.pickle"
@@ -108,15 +109,18 @@ class Data:
 
 class Sketch:
     width = 3
-    color = "#BCB534"
     def __init__(self):
-        self.stroke = Stroke([], Sketch.color, width=Sketch.width)
+        self.color = "#BCB534"
+        self.stroke = Stroke([], self.color, width=Sketch.width)
+    def set_color(self, color):
+        self.color = color
+        self.stroke.color = color
     def push(self, x, y):
         self.stroke.path.append( (x,y) )
     def blit(self, frame):
         print(f"Adding stroke {id(self.stroke)} to frame {id(frame)}. len: {len(self.stroke.path)}")
         frame.drawables.append(self.stroke)
-        self.stroke = Stroke([], Sketch.color, width=Sketch.width)
+        self.stroke = Stroke([], self.color, width=Sketch.width)
     def render(self, canvas):
         self.stroke.render(canvas, None, draft=True)
 
@@ -165,6 +169,13 @@ def init_gui(context):
     context.canvas = tk.Canvas(context.root)
     context.canvas.configure(bg='#242424')
     context.canvas.pack()
+    def choose_color(context):
+        rgb, hexstr = colorchooser.askcolor(title ="Choose color")
+        if hexstr:
+            context.sketch.set_color(hexstr)
+    button = Button(context.root, text = "Select color",
+       command = partial(choose_color, context=context))
+    button.pack()
 
     context.canvas.pack(expand = True, fill = tk.BOTH)
     context.canvas.bind_all("<Key-q>", partial(quit, context=context))
