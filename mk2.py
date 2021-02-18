@@ -54,6 +54,9 @@ class Frame:
         self.modify_time = self.create_time
         self.drawables = []
         print("new frame")
+    def pop_stroke(self):
+        if not self.drawables: return None
+        return self.drawables.pop()
     def render(self, canvas, current_viewport):
         vp_diff = self.viewport.subtract(current_viewport)
         for drawable in self.drawables:
@@ -79,6 +82,15 @@ class Data:
         else:
             frame = self.frame_lru[-1]
         sketch.blit(frame)
+    def pop_frame(self):
+        if not self.frames: return None
+        frame = self.frame_lru.pop()
+        self.frames.remove(frame)
+        return frame
+    def pop_stroke(self):
+        if not self.frames: return None
+        frame = self.frame_lru[-1]
+        return frame.pop_stroke()
     def render(self, canvas):
         for frame in self.frames:
             frame.render(canvas, self.current_viewport)
@@ -99,6 +111,14 @@ class Sketch:
 def quit(event, context):
     context.root.quit()
 
+def delete_frame(event, context):
+    _ = context.data.pop_frame()
+    context.redraw()
+
+def undo_stroke(event, context):
+    _ = context.data.pop_stroke()
+    context.redraw()
+
 def start_draw(event, context):
     x, y = event.x, event.y
     context.sketch.push(x, y)
@@ -117,16 +137,19 @@ class Context:
     def __init__(self, data):
         self.root = tk.Tk()
         self.canvas = tk.Canvas(self.root)
+        self.canvas.configure(bg='#242424')
         self.data = data
         self.sketch = Sketch()
     def redraw(self):
         self.canvas.delete("all")
-        self.sketch.render(self.canvas)
         self.data.render(self.canvas)
+        self.sketch.render(self.canvas)
 
 def init_gui(context):
     context.canvas.pack(expand = True, fill = tk.BOTH)
     context.canvas.bind_all("<Key-q>", partial(quit, context=context))
+    context.canvas.bind_all("<Key-d>", partial(delete_frame, context=context))
+    context.canvas.bind_all("<Key-u>", partial(undo_stroke, context=context))
     context.canvas.bind("<Button-1>", partial(start_draw, context=context))
     context.canvas.bind("<B1-Motion>", partial(continue_draw, context=context))
     context.canvas.bind("<ButtonRelease-1>", partial(stop_draw, context=context))
