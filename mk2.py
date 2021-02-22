@@ -27,10 +27,12 @@ class Viewport:
             self.p2 = np.array([1.0, 1.0])
     def __eq__(self, other):
         return np.all(self.p1 == other.p1) and np.all(self.p2 == other.p2)
-    ## strokes associated with this viewport have coordinates between [-1, 1]
-    def world_coordinates(self, pos):
-        delta = self.p2 - self.p1
-        return (pos+1)/2 * delta + self.p1
+    def world_to_screen(p, context):
+        screen_dim = context.bottomright - context.topleft
+        vp_dim = context.viewport.p2 - context.viewport.p1
+        pos = (p - context.viewport.p1)/vp_dim * screen_dim +\
+            context.topleft
+        return pos
 
     def screen_to_world(self, context, cursor_pos):
         ##only valid if this is the current viewport
@@ -102,16 +104,7 @@ class Frame:
         if not self.drawables: return None
         return self.drawables.pop()
     def render(self, context):
-        ## context has our current viewport
-        def world_to_screen(p, context, viewport):
-            w = viewport.world_coordinates(p)
-            screen_dim = context.bottomright - context.topleft
-            vp_dim = context.viewport.p2 - context.viewport.p1
-            pos = (p - context.viewport.p1)/vp_dim * screen_dim +\
-                context.topleft
-            return pos
-
-        f = partial(world_to_screen, context=context, viewport=self.viewport)
+        f = partial(Viewport.world_to_screen, context=context)
         for drawable in self.drawables:
             drawable.render(context.canvas, f)
 
@@ -162,16 +155,7 @@ class Sketch:
         frame.drawables.append(self.stroke)
         self.stroke = Stroke([], self.color, width=Sketch.width)
     def render(self, context):
-        ## context has our current viewport
-        def world_to_screen(p, context, viewport):
-            w = viewport.world_coordinates(p)
-            screen_dim = context.bottomright - context.topleft
-            vp_dim = context.viewport.p2 - context.viewport.p1
-            pos = (p - context.viewport.p1)/vp_dim * screen_dim +\
-                context.topleft
-            return pos
-
-        f = partial(world_to_screen, context=context, viewport=context.viewport)
+        f = partial(Viewport.world_to_screen, context=context)
         self.stroke.render(context.canvas, f, draft=True)
 
 class Context:
