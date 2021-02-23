@@ -31,16 +31,13 @@ class Viewport:
         pos = (p - context.viewport.p1)/vp_dim * screen_dim +\
             context.topleft
         return pos
-
     def screen_to_world(self, context, cursor_pos):
-        ##only valid if this is the current viewport
         screen_dim = context.bottomright - context.topleft
         vp_dim = context.viewport.p2 - context.viewport.p1
 
         pos = (cursor_pos - context.topleft)/screen_dim * vp_dim +\
             context.viewport.p1
         return pos
-
     def pan(self, context, pixel_delta):
         """ Pan this viewport by pixel_delta. Calculate world shift
             with global viewport """
@@ -49,7 +46,6 @@ class Viewport:
         d = pixel_delta/screen_dim * vp_dim
         self.p1 += d
         self.p2 += d
-
     def zoom(self, context, cursor_pos, zoomin):
         origin = self.screen_to_world(context, cursor_pos)
         zoomfactor = 0.1
@@ -59,9 +55,27 @@ class Viewport:
         else:
             self.p1 -= (origin - self.p1) * zoomfactor
             self.p2 -= (origin - self.p2) * zoomfactor
+    def zoomlevel(self, context):
+        vp_dim = context.viewport.p2 - context.viewport.p1
+        my_dim = self.p2 - self.p1
+        return (my_dim / vp_dim)[0]
 
-    def visible(self, viewport):
+
+    def visible(self, context):
         """True if self is visible from viewport"""
+        screen_dim = context.bottomright - context.topleft
+        vp_dim = context.viewport.p2 - context.viewport.p1
+        margin = context.margin/screen_dim * vp_dim
+        #margin = context.viewport.screen_to_world(context, context.margin)
+        #print(context.margin, margin, screen_dim, vp_dim)
+        my_dim = self.p2 - self.p1
+
+        if np.any(self.p1-margin > context.viewport.p2+margin): return False
+        if np.any(self.p2+margin < context.viewport.p1-margin): return False
+        ratio = my_dim/vp_dim
+        ## Don't render if it will be less than one pixel
+        if np.any(ratio > screen_dim): return False
+        if np.any(ratio < 1/screen_dim): return False
         return True
     def __str__(self):
         return f"<vp: {self.p1}, {self.p2}>"
@@ -72,7 +86,7 @@ class Stroke:
         self.color = color
         self.style = style
         self.width = width
-    def render(self, canvas, mapper, draft=False):
+    def render(self, canvas, mapper, zoom, draft=False):
         radius = 10;
         if draft and self.path:
             p1 = mapper(self.path[0]) + np.array([-radius, -radius])
@@ -86,7 +100,7 @@ class Stroke:
         for p1, p2 in pairs(self.path, loop=False):
             (x1, y1) = mapper(p1)
             (x2, y2) = mapper(p2)
-            obj_id = canvas.create_line(x1, y1, x2, y2, fill=self.color, width=self.width)
+            obj_id = canvas.create_line(x1, y1, x2, y2, fill=self.color, width=self.width*zoom)
 
 class Frame:
     def __init__(self, viewport):
@@ -101,7 +115,7 @@ class Frame:
     def render(self, context):
         f = partial(Viewport.world_to_screen, context=context)
         for drawable in self.drawables:
-            drawable.render(context.canvas, f)
+            drawable.render(context.canvas, f, self.viewport.zoomlevel(context))
 
 class Data:
     def __init__(self):
@@ -132,8 +146,15 @@ class Data:
         return frame.pop_stroke()
 
     def render(self, context):
+        drawn = 0
+        hidden = 0
         for frame in self.frames:
-            frame.render(context)
+            if frame.viewport.visible(context): ## maybe calculate this only on move
+                drawn += 1
+                frame.render(context)
+            else:
+                hidden += 1
+        print(f"drawn {drawn} hidden {hidden}")
 
 class Sketch:
     width = 3
@@ -151,9 +172,14 @@ class Sketch:
         self.stroke = Stroke([], self.color, width=Sketch.width)
     def render(self, context):
         f = partial(Viewport.world_to_screen, context=context)
-        self.stroke.render(context.canvas, f, draft=True)
+        self.stroke.render(context.canvas, f, 1, draft=True)
 
 ## TODO
 # display colors on screen
 # move between frames (animate)
 # line thicknes compensation
+# do not draw frames off screen
+#do not draw frames that are x times bigger than current
+# curves
+# shapes, text
+# tutorial

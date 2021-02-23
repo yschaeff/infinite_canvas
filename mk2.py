@@ -15,7 +15,8 @@ class Context:
         self.data = data
         self.sketch = Sketch()
         self.topleft = np.array([0, 0])
-        self.bottomright = np.array([0, 0])
+        self.bottomright = np.array([100, 100])
+        self.margin = 0
         self.viewport = Viewport()
         self.drag_anchor = np.array([0, 0])
     def redraw(self):
@@ -41,13 +42,12 @@ def scroll(event, context):
 def resize(event, context):
     w, h = event.width, event.height
     if w < h:
-        d = h-w
-        context.topleft = np.array([0, d/2])
-        context.bottomright = np.array([w, h-d/2])
+        margin = np.array([0, (h-w)/2])
     else:
-        d = w-h
-        context.topleft = np.array([d/2, 0])
-        context.bottomright = np.array([w-d/2, h])
+        margin = np.array([(w-h)/2, 0])
+    context.topleft = np.array([0, 0]) + margin
+    context.bottomright = np.array([w, h]) - margin
+    context.margin = margin
     context.redraw()
 
 def start_draw(event, context):
