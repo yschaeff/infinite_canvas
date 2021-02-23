@@ -19,6 +19,7 @@ class Context:
         self.margin = 0
         self.viewport = Viewport()
         self.drag_anchor = np.array([0, 0])
+        self.visible_frames = []
     def redraw(self):
         self.canvas.delete("all")
         self.data.render(self)
@@ -27,16 +28,17 @@ class Context:
 def quit(event, context):
     context.root.quit()
 def delete_frame(event, context):
-    _ = context.data.pop_frame()
+    _ = context.data.pop_frame(context)
     context.redraw()
 def undo_stroke(event, context):
-    _ = context.data.pop_stroke()
+    _ = context.data.pop_stroke(context)
     context.redraw()
 
 def scroll(event, context):
     cursor_pos = np.array([event.x, event.y])
     zoom_in = (event.num == 4)
     context.viewport.zoom(context, cursor_pos, zoom_in)
+    context.data.set_visible(context)
     context.redraw()
 
 def resize(event, context):
@@ -48,6 +50,7 @@ def resize(event, context):
     context.topleft = np.array([0, 0]) + margin
     context.bottomright = np.array([w, h]) - margin
     context.margin = margin
+    context.data.set_visible(context)
     context.redraw()
 
 def start_draw(event, context):
@@ -76,6 +79,7 @@ def continue_move(event, context):
     delta = context.drag_anchor - cursor_pos
     context.drag_anchor = cursor_pos
     context.viewport.pan(context, delta)
+    context.data.set_visible(context)
     context.redraw()
 def stop_move(event, context):
     cursor_pos = np.array([event.x, event.y])
@@ -129,7 +133,7 @@ def main():
     data.initialize()
     context = Context(data)
     init_gui(context)
-    data.render(context)
+    data.set_visible(context)
     tk.mainloop()
 
     print("pickling")

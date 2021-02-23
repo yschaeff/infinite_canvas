@@ -60,14 +60,11 @@ class Viewport:
         my_dim = self.p2 - self.p1
         return (my_dim / vp_dim)[0]
 
-
     def visible(self, context):
         """True if self is visible from viewport"""
         screen_dim = context.bottomright - context.topleft
         vp_dim = context.viewport.p2 - context.viewport.p1
         margin = context.margin/screen_dim * vp_dim
-        #margin = context.viewport.screen_to_world(context, context.margin)
-        #print(context.margin, margin, screen_dim, vp_dim)
         my_dim = self.p2 - self.p1
 
         if np.any(self.p1-margin > context.viewport.p2+margin): return False
@@ -123,6 +120,7 @@ class Data:
         print("created")
         self.frames = []
         self.frame_lru = []
+        self.visible_frames = []
     def initialize(self):
         """exec always"""
         print("init")
@@ -135,26 +133,24 @@ class Data:
         else:
             frame = self.frame_lru[-1]
         context.sketch.blit(frame)
-    def pop_frame(self):
+        self.set_visible(context)
+    def pop_frame(self, context):
         if not self.frames: return None
         frame = self.frame_lru.pop()
         self.frames.remove(frame)
+        self.set_visible(context)
         return frame
-    def pop_stroke(self):
+    def pop_stroke(self, context):
         if not self.frames: return None
         frame = self.frame_lru[-1]
         return frame.pop_stroke()
-
+    def set_visible(self, context):
+        context.visible_frames = list(
+            filter(lambda frame: frame.viewport.visible(context), self.frames))
+        print("vis", len(context.visible_frames), "tot", len(self.frames))
     def render(self, context):
-        drawn = 0
-        hidden = 0
-        for frame in self.frames:
-            if frame.viewport.visible(context): ## maybe calculate this only on move
-                drawn += 1
-                frame.render(context)
-            else:
-                hidden += 1
-        print(f"drawn {drawn} hidden {hidden}")
+        for frame in context.visible_frames:
+            frame.render(context)
 
 class Sketch:
     width = 3
