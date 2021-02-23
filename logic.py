@@ -177,9 +177,7 @@ class Sketch:
 ## TODO
 # display colors on screen
 # move between frames (animate)
-# line thicknes compensation
-# do not draw frames off screen
-#do not draw frames that are x times bigger than current
 # curves
 # shapes, text
 # tutorial
+# alpha blend if zoom is to much (so that we gradually hide frame)
