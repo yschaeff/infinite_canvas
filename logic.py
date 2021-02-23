@@ -20,9 +20,13 @@ class Viewport:
         if viewport:
             self.p1 = viewport.p1.copy()
             self.p2 = viewport.p2.copy()
+            self.bb1 = viewport.bb1.copy()
+            self.bb2 = viewport.bb2.copy()
         else:
             self.p1 = np.array([-1.0, -1.0])
             self.p2 = np.array([1.0, 1.0])
+            self.bb1 = np.array([-1.0, -1.0])
+            self.bb2 = np.array([1.0, 1.0])
     def __eq__(self, other):
         return np.all(self.p1 == other.p1) and np.all(self.p2 == other.p2)
     def world_to_screen(p, context):
@@ -65,11 +69,10 @@ class Viewport:
         screen_dim = context.bottomright - context.topleft
         vp_dim = context.viewport.p2 - context.viewport.p1
         margin = context.margin/screen_dim * vp_dim
-        my_dim = self.p2 - self.p1
 
-        if np.any(self.p1-margin > context.viewport.p2+margin): return False
-        if np.any(self.p2+margin < context.viewport.p1-margin): return False
-        ratio = my_dim/vp_dim
+        if np.any(self.bb1 > context.viewport.p2+margin): return False
+        if np.any(self.bb2 < context.viewport.p1-margin): return False
+        ratio = (self.p2 - self.p1)/vp_dim
         ## Don't render if it will be less than one pixel
         if np.any(ratio > screen_dim): return False
         if np.any(ratio < 1/screen_dim): return False
@@ -98,6 +101,11 @@ class Stroke:
             (x1, y1) = mapper(p1)
             (x2, y2) = mapper(p2)
             obj_id = canvas.create_line(x1, y1, x2, y2, fill=self.color, width=self.width*zoom)
+    def boundingbox(self):
+        path = np.stack(self.path)
+        p1 = path.min(axis=0)
+        p2 = path.max(axis=0)
+        return p1, p2
 
 class Frame:
     def __init__(self, viewport):
@@ -108,11 +116,33 @@ class Frame:
         print("new frame")
     def pop_stroke(self):
         if not self.drawables: return None
+        self.recalc_bounding_box()
         return self.drawables.pop()
+    def push_stroke(self, stroke):
+        self.drawables.append(stroke)
+        self.recalc_bounding_box()
+    def recalc_bounding_box(self):
+        P1, P2 = zip(*map(lambda d: d.boundingbox(), self.drawables))
+        self.viewport.bb1 = np.stack(P1).min(axis=0)
+        self.viewport.bb2 = np.stack(P2).max(axis=0)
+
     def render(self, context):
         f = partial(Viewport.world_to_screen, context=context)
         for drawable in self.drawables:
             drawable.render(context.canvas, f, self.viewport.zoomlevel(context))
+        (x1, y1) = f(self.viewport.p1)
+        (x2, y2) = f(self.viewport.p2)
+        obj_id = context.canvas.create_line(x1, y1, x2, y1, fill="#FF0000", width=1)
+        obj_id = context.canvas.create_line(x2, y1, x2, y2, fill="#FF0000", width=1)
+        obj_id = context.canvas.create_line(x2, y2, x1, y2, fill="#FF0000", width=1)
+        obj_id = context.canvas.create_line(x1, y2, x1, y1, fill="#FF0000", width=1)
+        #self.recalc_bounding_box() #TODO NOT HERE
+        (x1, y1) = f(self.viewport.bb1)
+        (x2, y2) = f(self.viewport.bb2)
+        obj_id = context.canvas.create_line(x1, y1, x2, y1, fill="#0000FF", width=1)
+        obj_id = context.canvas.create_line(x2, y1, x2, y2, fill="#0000FF", width=1)
+        obj_id = context.canvas.create_line(x2, y2, x1, y2, fill="#0000FF", width=1)
+        obj_id = context.canvas.create_line(x1, y2, x1, y1, fill="#0000FF", width=1)
 
 class Data:
     def __init__(self):
@@ -164,7 +194,7 @@ class Sketch:
         self.stroke.path.append( p )
     def blit(self, frame):
         print(f"Adding stroke {id(self.stroke)} to frame {id(frame)}. len: {len(self.stroke.path)}")
-        frame.drawables.append(self.stroke)
+        frame.push_stroke(self.stroke)
         self.stroke = Stroke([], self.color, width=Sketch.width)
     def render(self, context):
         f = partial(Viewport.world_to_screen, context=context)
@@ -177,3 +207,5 @@ class Sketch:
 # shapes, text
 # tutorial
 # alpha blend if zoom is to much (so that we gradually hide frame)
+# rotations
+# display debug: frames/hidden, draw BBs
