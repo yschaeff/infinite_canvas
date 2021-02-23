@@ -128,19 +128,19 @@ class Frame:
         f = partial(Viewport.world_to_screen, context=context)
         for drawable in self.drawables:
             drawable.render(context.canvas, f, self.viewport.zoomlevel(context))
-        (x1, y1) = f(self.viewport.p1)
-        (x2, y2) = f(self.viewport.p2)
-        obj_id = context.canvas.create_line(x1, y1, x2, y1, fill="#FF0000", width=1)
-        obj_id = context.canvas.create_line(x2, y1, x2, y2, fill="#FF0000", width=1)
-        obj_id = context.canvas.create_line(x2, y2, x1, y2, fill="#FF0000", width=1)
-        obj_id = context.canvas.create_line(x1, y2, x1, y1, fill="#FF0000", width=1)
-        #self.recalc_bounding_box() #TODO NOT HERE
-        (x1, y1) = f(self.bb1)
-        (x2, y2) = f(self.bb2)
-        obj_id = context.canvas.create_line(x1, y1, x2, y1, fill="#0000FF", width=1)
-        obj_id = context.canvas.create_line(x2, y1, x2, y2, fill="#0000FF", width=1)
-        obj_id = context.canvas.create_line(x2, y2, x1, y2, fill="#0000FF", width=1)
-        obj_id = context.canvas.create_line(x1, y2, x1, y1, fill="#0000FF", width=1)
+        if context.debug:
+            (x1, y1) = f(self.viewport.p1)
+            (x2, y2) = f(self.viewport.p2)
+            obj_id = context.canvas.create_line(x1, y1, x2, y1, fill="#FF0000", width=1)
+            obj_id = context.canvas.create_line(x2, y1, x2, y2, fill="#FF0000", width=1)
+            obj_id = context.canvas.create_line(x2, y2, x1, y2, fill="#FF0000", width=1)
+            obj_id = context.canvas.create_line(x1, y2, x1, y1, fill="#FF0000", width=1)
+            (x1, y1) = f(self.bb1)
+            (x2, y2) = f(self.bb2)
+            obj_id = context.canvas.create_line(x1, y1, x2, y1, fill="#0000FF", width=1)
+            obj_id = context.canvas.create_line(x2, y1, x2, y2, fill="#0000FF", width=1)
+            obj_id = context.canvas.create_line(x2, y2, x1, y2, fill="#0000FF", width=1)
+            obj_id = context.canvas.create_line(x1, y2, x1, y1, fill="#0000FF", width=1)
 
 class Data:
     def __init__(self):
@@ -175,7 +175,8 @@ class Data:
     def set_visible(self, context):
         context.visible_frames = list(
             filter(lambda frame: frame.visible(context), self.frames))
-        print("vis", len(context.visible_frames), "tot", len(self.frames))
+        if context.debug:
+            print(f"Visible frames: {len(context.visible_frames)}/{len(self.frames)}")
     def render(self, context):
         for frame in context.visible_frames:
             frame.render(context)

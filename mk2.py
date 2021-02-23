@@ -20,6 +20,7 @@ class Context:
         self.viewport = Viewport()
         self.drag_anchor = np.array([0, 0])
         self.visible_frames = []
+        self.debug = False
     def redraw(self):
         self.canvas.delete("all")
         self.data.render(self)
@@ -32,6 +33,9 @@ def delete_frame(event, context):
     context.redraw()
 def undo_stroke(event, context):
     _ = context.data.pop_stroke(context)
+    context.redraw()
+def toggle_debug(event, context):
+    context.debug ^= True
     context.redraw()
 
 def scroll(event, context):
@@ -107,6 +111,7 @@ def init_gui(context):
     context.canvas.bind_all("<Key-q>", partial(quit, context=context))
     context.canvas.bind_all("<Key-d>", partial(delete_frame, context=context))
     context.canvas.bind_all("<Key-u>", partial(undo_stroke, context=context))
+    context.canvas.bind_all("<Key-b>", partial(toggle_debug, context=context))
     context.canvas.bind("<Button-1>", partial(start_draw, context=context))
     context.canvas.bind("<B1-Motion>", partial(continue_draw, context=context))
     context.canvas.bind("<ButtonRelease-1>", partial(stop_draw, context=context))
