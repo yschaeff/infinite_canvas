@@ -20,13 +20,9 @@ class Viewport:
         if viewport:
             self.p1 = viewport.p1.copy()
             self.p2 = viewport.p2.copy()
-            self.bb1 = viewport.bb1.copy()
-            self.bb2 = viewport.bb2.copy()
         else:
             self.p1 = np.array([-1.0, -1.0])
             self.p2 = np.array([1.0, 1.0])
-            self.bb1 = np.array([-1.0, -1.0])
-            self.bb2 = np.array([1.0, 1.0])
     def __eq__(self, other):
         return np.all(self.p1 == other.p1) and np.all(self.p2 == other.p2)
     def world_to_screen(p, context):
@@ -64,19 +60,6 @@ class Viewport:
         my_dim = self.p2 - self.p1
         return (my_dim / vp_dim)[0]
 
-    def visible(self, context):
-        """True if self is visible from viewport"""
-        screen_dim = context.bottomright - context.topleft
-        vp_dim = context.viewport.p2 - context.viewport.p1
-        margin = context.margin/screen_dim * vp_dim
-
-        if np.any(self.bb1 > context.viewport.p2+margin): return False
-        if np.any(self.bb2 < context.viewport.p1-margin): return False
-        ratio = (self.p2 - self.p1)/vp_dim
-        ## Don't render if it will be less than one pixel
-        if np.any(ratio > screen_dim): return False
-        if np.any(ratio < 1/screen_dim): return False
-        return True
     def __str__(self):
         return f"<vp: {self.p1}, {self.p2}>"
 
@@ -113,6 +96,8 @@ class Frame:
         self.create_time = time.time()
         self.modify_time = self.create_time
         self.drawables = []
+        self.bb1 = np.array([-1.0, -1.0])
+        self.bb2 = np.array([1.0, 1.0])
         print("new frame")
     def pop_stroke(self):
         if not self.drawables: return None
@@ -123,8 +108,21 @@ class Frame:
         self.recalc_bounding_box()
     def recalc_bounding_box(self):
         P1, P2 = zip(*map(lambda d: d.boundingbox(), self.drawables))
-        self.viewport.bb1 = np.stack(P1).min(axis=0)
-        self.viewport.bb2 = np.stack(P2).max(axis=0)
+        self.bb1 = np.stack(P1).min(axis=0)
+        self.bb2 = np.stack(P2).max(axis=0)
+    def visible(self, context):
+        """True if self is visible from viewport"""
+        screen_dim = context.bottomright - context.topleft
+        vp_dim = context.viewport.p2 - context.viewport.p1
+        margin = context.margin/screen_dim * vp_dim
+
+        if np.any(self.bb1 > context.viewport.p2+margin): return False
+        if np.any(self.bb2 < context.viewport.p1-margin): return False
+        ratio = (self.bb2 - self.bb1)/vp_dim
+        ## Don't render if it will be less than one pixel
+        if np.any(ratio > screen_dim): return False
+        if np.any(ratio < 1/screen_dim): return False
+        return True
 
     def render(self, context):
         f = partial(Viewport.world_to_screen, context=context)
@@ -137,8 +135,8 @@ class Frame:
         obj_id = context.canvas.create_line(x2, y2, x1, y2, fill="#FF0000", width=1)
         obj_id = context.canvas.create_line(x1, y2, x1, y1, fill="#FF0000", width=1)
         #self.recalc_bounding_box() #TODO NOT HERE
-        (x1, y1) = f(self.viewport.bb1)
-        (x2, y2) = f(self.viewport.bb2)
+        (x1, y1) = f(self.bb1)
+        (x2, y2) = f(self.bb2)
         obj_id = context.canvas.create_line(x1, y1, x2, y1, fill="#0000FF", width=1)
         obj_id = context.canvas.create_line(x2, y1, x2, y2, fill="#0000FF", width=1)
         obj_id = context.canvas.create_line(x2, y2, x1, y2, fill="#0000FF", width=1)
@@ -176,7 +174,7 @@ class Data:
         return frame.pop_stroke()
     def set_visible(self, context):
         context.visible_frames = list(
-            filter(lambda frame: frame.viewport.visible(context), self.frames))
+            filter(lambda frame: frame.visible(context), self.frames))
         print("vis", len(context.visible_frames), "tot", len(self.frames))
     def render(self, context):
         for frame in context.visible_frames:
