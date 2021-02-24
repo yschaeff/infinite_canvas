@@ -116,8 +116,8 @@ def stop_move(event, context):
 def init_gui(context):
     context.root = tk.Tk()
 
-    #labelExample = tk.Label(context.root, text="This is a Label")
-    #labelExample.pack()
+    labelExample = tk.Label(context.root, text="q:quit, u:undo, d:delete(recent): b:debug")
+    labelExample.pack()
 
     context.canvas = tk.Canvas(context.root)
     context.canvas.configure(bg='#242424')
