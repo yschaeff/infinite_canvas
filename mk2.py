@@ -75,16 +75,26 @@ def toggle_debug(event, context):
     context.debug ^= True
     context.redraw()
 
+
+def moveto(context, vp):
+    context.viewport = Viewport(vp)
+    context.dirty = True
+    context.redraw()
+
+def move_to(context, viewport, dt=200):
+    steps = int(dt*30/1000)
+    for i in range(1, steps+1):
+        vp = context.viewport.interpolate(viewport, steps, i)
+        f = partial(moveto, context=context, vp=vp)
+        f.__name__ = ""
+        context.root.after(i*dt//steps, f)
+
 def next_frame(event, context):
     context.last_frame = context.data.next(context.last_frame)
-    context.viewport = Viewport(context.last_frame.viewport)
-    context.dirty = True
-    context.redraw()
+    move_to(context, context.last_frame.viewport)
 def prev_frame(event, context):
     context.last_frame = context.data.previous(context.last_frame)
-    context.viewport = Viewport(context.last_frame.viewport)
-    context.dirty = True
-    context.redraw()
+    move_to(context, context.last_frame.viewport)
 
 def scroll(event, context):
     cursor_pos = np.array([event.x, event.y])
@@ -168,7 +178,7 @@ def stop_move(event, context):
 def init_gui(context):
     context.root = tk.Tk()
 
-    labelExample = tk.Label(context.root, text="q:quit, u:undo, d:delete(recent): b:debug")
+    labelExample = tk.Label(context.root, text="q:quit, u:undo, d:delete(recent): b:debug j:next k:prev")
     labelExample.pack()
 
     context.canvas = tk.Canvas(context.root)

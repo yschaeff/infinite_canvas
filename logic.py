@@ -25,6 +25,11 @@ class Viewport:
             self.p2 = np.array([1.0, 1.0])
     def __eq__(self, other):
         return np.all(self.p1 == other.p1) and np.all(self.p2 == other.p2)
+    def interpolate(self, viewport, steps, step):
+        vp = Viewport()
+        vp.p1 = self.p1 + (viewport.p1-self.p1)/steps * step
+        vp.p2 = self.p2 + (viewport.p2-self.p2)/steps * step
+        return vp
     def world_to_screen(p, context):
         screen_dim = context.bottomright - context.topleft
         vp_dim = context.viewport.p2 - context.viewport.p1
@@ -157,7 +162,8 @@ class Data:
         if not frame:
             return self.frame_lru[-1]
         i = self.frame_lru.index(frame)
-        if i == len(self.frames)-1: return frame
+        if i == len(self.frames)-1:
+            return self.frame_lru[-1]
         return self.frame_lru[i+1]
     def push_sketch(self, context):
         if not self.frame_lru or self.frame_lru[-1].viewport != context.viewport:
