@@ -179,6 +179,12 @@ class Data:
             context.dirty = False
         for frame in context.visible_frames:
             frame.render(context)
+        for i, color in enumerate(context.visible_colors):
+            selected = (context.sketch.color == color)
+            r = 30
+            s = 4
+            obj_id = context.canvas.create_rectangle(s*(i+1)+r*i, s, (s+r)*(i+1), s+r, fill=color, outline="#FFFFFF",width = selected*s)
+
 
 class Sketch:
     width = 3
