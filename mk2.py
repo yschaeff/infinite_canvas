@@ -11,6 +11,8 @@ PICKLE_FILE = "canvas.pickle"
 class Context:
     """This holds all the runtime context. Anything we don't care to save
        to file. """
+    COLOR_SIZE = 48
+    COLOR_GAP = 4
     def __init__(self, data):
             ## Main window
         self.root = None
@@ -42,6 +44,17 @@ class Context:
         self.debug = False
             ## are we performing a stroke now?
         self.drawing = False
+    @classmethod
+    def color_picker_location(c):
+        r = c.COLOR_SIZE
+        s = c.COLOR_GAP
+        return np.array([s, s]), np.array([s+r, s+r])
+    @classmethod
+    def palette_location(c, index):
+        r = c.COLOR_SIZE
+        s = c.COLOR_GAP
+        i = index + 1
+        return np.array([s, s*(i+1)+r*i]), np.array([s+r, (s+r)*(i+1)])
     def redraw(self):
         self.canvas.delete("all")
         self.data.render(self)
@@ -83,10 +96,7 @@ def resize(event, context):
 def handle_hud(event, context):
     cursor_pos = np.array([event.x, event.y])
     shift = (event.state == 1)
-    r = 30
-    s = 4
-    p1 = np.array([s, s])
-    p2 = np.array([s+r, s+r])
+    p1, p2 = context.color_picker_location()
     ##color picker
     if np.all(cursor_pos > p1) and np.all(cursor_pos < p2):
         rgb, hexstr = colorchooser.askcolor(title ="Choose color", color=context.sketch.color)
@@ -96,9 +106,8 @@ def handle_hud(event, context):
             else:
                 context.sketch.set_color(hexstr)
         return True
-    for i, color in enumerate(context.visible_colors, start=1):
-        p1 = np.array([s, s*(i+1)+r*i])
-        p2 = np.array([s+r, (s+r)*(i+1)])
+    for i, color in enumerate(context.visible_colors):
+        p1, p2 = context.palette_location(i)
         if np.all(cursor_pos > p1) and np.all(cursor_pos < p2):
             context.sketch.set_color(color)
             return True

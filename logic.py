@@ -179,13 +179,11 @@ class Data:
         for frame in context.visible_frames:
             frame.render(context)
         ## render color palette
-        r = 30
-        s = 4
-        obj_id = context.canvas.create_oval(s, s, s+r, s+r, fill=context.sketch.color, outline="#FFFFFF", activewidth=2, activedash=(3,5))
-        for i, color in enumerate(context.visible_colors, start=1):
+        p1, p2 = context.color_picker_location()
+        obj_id = context.canvas.create_oval(*p1, *p2, fill=context.sketch.color, outline="#FFFFFF", activewidth=2, activedash=(3,5))
+        for i, color in enumerate(context.visible_colors):
             selected = (context.sketch.color == color)
-            p1 = np.array([s, s*(i+1)+r*i])
-            p2 = np.array([s+r, (s+r)*(i+1)])
+            p1, p2 = context.palette_location(i)
             obj_id = context.canvas.create_rectangle(*p1, *p2, fill=color, outline="#FFFFFF", activewidth=2, activedash=(3,5))
 
 
