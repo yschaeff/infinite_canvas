@@ -206,7 +206,6 @@ class Sketch:
         self.stroke.render(context.canvas, f, 1, draft=True)
 
 ## TODO
-# display colors on screen
 # move between frames (animate)
 # curves
 # shapes, text
