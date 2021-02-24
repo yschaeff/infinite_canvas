@@ -80,10 +80,11 @@ class Stroke:
             p2 = mapper(self.path[-1]) + np.array([radius, radius])
             (x1, y1), (x2, y2) = p1, p2
             obj_id = canvas.create_oval(x1, y1, x2, y2, fill="#BC347F", width=self.width*3)
-        for p1, p2 in pairs(self.path, loop=False):
-            (x1, y1) = mapper(p1)
-            (x2, y2) = mapper(p2)
-            obj_id = canvas.create_line(x1, y1, x2, y2, fill=self.color, width=self.width*zoom)
+        if not self.path or len(self.path) < 2: return
+        p = np.concatenate(list(map(mapper, self.path)))
+        obj_id = canvas.create_line(*p, fill=self.color,
+            width=self.width*zoom, cap=tk.ROUND, activefill="#FFFFFF",
+            smooth=True, splinesteps=12)
     def boundingbox(self):
         path = np.stack(self.path)
         p1 = path.min(axis=0)
@@ -131,16 +132,10 @@ class Frame:
         if context.debug:
             (x1, y1) = f(self.viewport.p1)
             (x2, y2) = f(self.viewport.p2)
-            obj_id = context.canvas.create_line(x1, y1, x2, y1, fill="#FF0000", width=1)
-            obj_id = context.canvas.create_line(x2, y1, x2, y2, fill="#FF0000", width=1)
-            obj_id = context.canvas.create_line(x2, y2, x1, y2, fill="#FF0000", width=1)
-            obj_id = context.canvas.create_line(x1, y2, x1, y1, fill="#FF0000", width=1)
+            obj_id = context.canvas.create_rectangle(x1, y1, x2, y2, outline="#FF0000", width=1)
             (x1, y1) = f(self.bb1)
             (x2, y2) = f(self.bb2)
-            obj_id = context.canvas.create_line(x1, y1, x2, y1, fill="#0000FF", width=1)
-            obj_id = context.canvas.create_line(x2, y1, x2, y2, fill="#0000FF", width=1)
-            obj_id = context.canvas.create_line(x2, y2, x1, y2, fill="#0000FF", width=1)
-            obj_id = context.canvas.create_line(x1, y2, x1, y1, fill="#0000FF", width=1)
+            obj_id = context.canvas.create_rectangle(x1, y1, x2, y2, outline="#0000FF", width=1)
 
 class Data:
     def __init__(self):
@@ -206,5 +201,5 @@ class Sketch:
 # shapes, text
 # tutorial
 # alpha blend if zoom is to much (so that we gradually hide frame)
+  # use stiple
 # rotations
-# display debug: frames/hidden, draw BBs
