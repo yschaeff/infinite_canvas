@@ -83,8 +83,7 @@ class Stroke:
         if not self.path or len(self.path) < 2: return
         p = np.concatenate(list(map(mapper, self.path)))
         obj_id = canvas.create_line(*p, fill=self.color,
-            width=self.width*zoom, cap=tk.ROUND, activefill="#FFFFFF",
-            smooth=True, splinesteps=12)
+            width=self.width*zoom, cap=tk.ROUND, smooth=True, splinesteps=12)
     def boundingbox(self):
         path = np.stack(self.path)
         p1 = path.min(axis=0)
@@ -179,11 +178,15 @@ class Data:
             context.dirty = False
         for frame in context.visible_frames:
             frame.render(context)
-        for i, color in enumerate(context.visible_colors):
+        ## render color palette
+        r = 30
+        s = 4
+        obj_id = context.canvas.create_oval(s, s, s+r, s+r, fill=context.sketch.color, outline="#FFFFFF", activewidth=2, activedash=(3,5))
+        for i, color in enumerate(context.visible_colors, start=1):
             selected = (context.sketch.color == color)
-            r = 30
-            s = 4
-            obj_id = context.canvas.create_rectangle(s*(i+1)+r*i, s, (s+r)*(i+1), s+r, fill=color, outline="#FFFFFF",width = selected*s)
+            p1 = np.array([s, s*(i+1)+r*i])
+            p2 = np.array([s+r, (s+r)*(i+1)])
+            obj_id = context.canvas.create_rectangle(*p1, *p2, fill=color, outline="#FFFFFF", activewidth=2, activedash=(3,5))
 
 
 class Sketch:

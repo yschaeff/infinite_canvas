@@ -40,6 +40,8 @@ class Context:
         self.dirty = True
             ## print/show some debug info
         self.debug = False
+            ## are we performing a stroke now?
+        self.drawing = False
     def redraw(self):
         self.canvas.delete("all")
         self.data.render(self)
@@ -78,21 +80,50 @@ def resize(event, context):
     context.dirty = True
     context.redraw()
 
-def start_draw(event, context):
+def handle_hud(event, context):
     cursor_pos = np.array([event.x, event.y])
-    p = context.viewport.screen_to_world(context, cursor_pos)
-    context.sketch.push(p)
+    shift = (event.state == 1)
+    r = 30
+    s = 4
+    p1 = np.array([s, s])
+    p2 = np.array([s+r, s+r])
+    ##color picker
+    if np.all(cursor_pos > p1) and np.all(cursor_pos < p2):
+        rgb, hexstr = colorchooser.askcolor(title ="Choose color", color=context.sketch.color)
+        if hexstr:
+            if shift:
+                context.canvas.configure(bg=hexstr)
+            else:
+                context.sketch.set_color(hexstr)
+        return True
+    for i, color in enumerate(context.visible_colors, start=1):
+        p1 = np.array([s, s*(i+1)+r*i])
+        p2 = np.array([s+r, (s+r)*(i+1)])
+        if np.all(cursor_pos > p1) and np.all(cursor_pos < p2):
+            context.sketch.set_color(color)
+            return True
+    return False
+
+def start_draw(event, context):
+    if not handle_hud(event, context):
+        cursor_pos = np.array([event.x, event.y])
+        p = context.viewport.screen_to_world(context, cursor_pos)
+        context.sketch.push(p)
+        context.drawing = True
     context.redraw()
 def continue_draw(event, context):
+    if not context.drawing: return
     cursor_pos = np.array([event.x, event.y])
     p = context.viewport.screen_to_world(context, cursor_pos)
     context.sketch.push(p)
     context.redraw()
 def stop_draw(event, context):
+    if not context.drawing: return
     cursor_pos = np.array([event.x, event.y])
     p = context.viewport.screen_to_world(context, cursor_pos)
     context.sketch.push(p)
     context.data.push_sketch(context)
+    context.drawing = False
     context.dirty = True
     context.redraw()
 
@@ -122,13 +153,6 @@ def init_gui(context):
     context.canvas = tk.Canvas(context.root)
     context.canvas.configure(bg='#242424')
     context.canvas.pack()
-    def choose_color(context):
-        rgb, hexstr = colorchooser.askcolor(title ="Choose color")
-        if hexstr:
-            context.sketch.set_color(hexstr)
-    button = Button(context.root, text = "Select color",
-       command = partial(choose_color, context=context))
-    button.pack()
 
     context.canvas.pack(expand = True, fill = tk.BOTH)
     context.canvas.bind_all("<Key-q>", partial(quit, context=context))
