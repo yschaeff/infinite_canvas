@@ -9,20 +9,37 @@ from logic import Data, Viewport, Sketch, Frame
 PICKLE_FILE = "canvas.pickle"
 
 class Context:
+    """This holds all the runtime context. Anything we don't care to save
+       to file. """
     def __init__(self, data):
+            ## Main window
         self.root = None
+            ## TKinter canvas to draw on
         self.canvas = None
+            ## Long term storage
         self.data = data
+            ## Scratchpad, what is being drawn *now*
         self.sketch = Sketch()
+            ## Which part of the world is currently on screen?
+        self.viewport = Viewport()
+            ## Where, in pixel coords, does viewport map to?
         self.topleft = np.array([0, 0])
         self.bottomright = np.array([100, 100])
-        self.margin = 0
-        self.viewport = Viewport()
+            ## Size of border around viewport when canvas is not square
+        self.margin = np.array([0, 0])
+            ## Start drag coordinate
         self.drag_anchor = np.array([0, 0])
+            ## List of frames currently in view
         self.visible_frames = []
+            ## set of colors currently in view
         self.visible_colors = set()
-        self.debug = False
+            ## Set to True is something changed on screen.
+            ## TODO maybe in the future make this a state
+            ## CLEAN / DRAW / IN / OUT / LEFT / RIGHT / UP / DOWN
+            ## Then we can intelligently decide which frames to test
         self.dirty = True
+            ## print/show some debug info
+        self.debug = False
     def redraw(self):
         self.canvas.delete("all")
         self.data.render(self)
