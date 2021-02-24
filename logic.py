@@ -156,27 +156,27 @@ class Data:
         else:
             frame = self.frame_lru[-1]
         context.sketch.blit(frame)
-        self.set_visible(context)
     def pop_frame(self, context):
         if not self.frames: return None
         frame = self.frame_lru.pop()
         self.frames.remove(frame)
-        self.set_visible(context)
         return frame
     def pop_stroke(self, context):
         if not self.frames: return None
         frame = self.frame_lru[-1]
         return frame.pop_stroke()
-    def set_visible(self, context):
+    def update(self, context):
         context.visible_frames = list(
             filter(lambda frame: frame.visible(context), self.frames))
-        if context.debug:
-            print(f"Visible frames: {len(context.visible_frames)}/{len(self.frames)}")
         context.visible_colors = reduce(set.union,
             map(lambda f: f.used_colors(), context.visible_frames), set())
         if context.debug:
+            print(f"Visible frames: {len(context.visible_frames)}/{len(self.frames)}")
             print(f"Colors: {context.visible_colors}")
     def render(self, context):
+        if context.dirty:
+            self.update(context)
+            context.dirty = False
         for frame in context.visible_frames:
             frame.render(context)
 

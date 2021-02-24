@@ -22,6 +22,7 @@ class Context:
         self.visible_frames = []
         self.visible_colors = set()
         self.debug = False
+        self.dirty = True
     def redraw(self):
         self.canvas.delete("all")
         self.data.render(self)
@@ -31,9 +32,11 @@ def quit(event, context):
     context.root.quit()
 def delete_frame(event, context):
     _ = context.data.pop_frame(context)
+    context.dirty = True
     context.redraw()
 def undo_stroke(event, context):
     _ = context.data.pop_stroke(context)
+    context.dirty = True
     context.redraw()
 def toggle_debug(event, context):
     context.debug ^= True
@@ -43,7 +46,7 @@ def scroll(event, context):
     cursor_pos = np.array([event.x, event.y])
     zoom_in = (event.num == 4)
     context.viewport.zoom(context, cursor_pos, zoom_in)
-    context.data.set_visible(context)
+    context.dirty = True
     context.redraw()
 
 def resize(event, context):
@@ -55,7 +58,7 @@ def resize(event, context):
     context.topleft = np.array([0, 0]) + margin
     context.bottomright = np.array([w, h]) - margin
     context.margin = margin
-    context.data.set_visible(context)
+    context.dirty = True
     context.redraw()
 
 def start_draw(event, context):
@@ -73,6 +76,7 @@ def stop_draw(event, context):
     p = context.viewport.screen_to_world(context, cursor_pos)
     context.sketch.push(p)
     context.data.push_sketch(context)
+    context.dirty = True
     context.redraw()
 
 def start_move(event, context):
@@ -84,11 +88,12 @@ def continue_move(event, context):
     delta = context.drag_anchor - cursor_pos
     context.drag_anchor = cursor_pos
     context.viewport.pan(context, delta)
-    context.data.set_visible(context)
+    context.dirty = True
     context.redraw()
 def stop_move(event, context):
     cursor_pos = np.array([event.x, event.y])
     p = context.viewport.screen_to_world(context, cursor_pos)
+    context.dirty = True
     context.redraw()
 
 def init_gui(context):
@@ -139,7 +144,7 @@ def main():
     data.initialize()
     context = Context(data)
     init_gui(context)
-    data.set_visible(context)
+    data.dirty = True
     tk.mainloop()
 
     print("pickling")
