@@ -44,6 +44,7 @@ class Context:
         self.debug = False
             ## are we performing a stroke now?
         self.drawing = False
+        self.last_frame = None
     @classmethod
     def color_picker_location(c):
         r = c.COLOR_SIZE
@@ -72,6 +73,17 @@ def undo_stroke(event, context):
     context.redraw()
 def toggle_debug(event, context):
     context.debug ^= True
+    context.redraw()
+
+def next_frame(event, context):
+    context.last_frame = context.data.next(context.last_frame)
+    context.viewport = Viewport(context.last_frame.viewport)
+    context.dirty = True
+    context.redraw()
+def prev_frame(event, context):
+    context.last_frame = context.data.previous(context.last_frame)
+    context.viewport = Viewport(context.last_frame.viewport)
+    context.dirty = True
     context.redraw()
 
 def scroll(event, context):
@@ -168,6 +180,8 @@ def init_gui(context):
     context.canvas.bind_all("<Key-d>", partial(delete_frame, context=context))
     context.canvas.bind_all("<Key-u>", partial(undo_stroke, context=context))
     context.canvas.bind_all("<Key-b>", partial(toggle_debug, context=context))
+    context.canvas.bind_all("<Key-j>", partial(next_frame, context=context))
+    context.canvas.bind_all("<Key-k>", partial(prev_frame, context=context))
     context.canvas.bind("<Button-1>", partial(start_draw, context=context))
     context.canvas.bind("<B1-Motion>", partial(continue_draw, context=context))
     context.canvas.bind("<ButtonRelease-1>", partial(stop_draw, context=context))
