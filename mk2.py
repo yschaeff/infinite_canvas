@@ -20,6 +20,7 @@ class Context:
         self.viewport = Viewport()
         self.drag_anchor = np.array([0, 0])
         self.visible_frames = []
+        self.visible_colors = set()
         self.debug = False
     def redraw(self):
         self.canvas.delete("all")

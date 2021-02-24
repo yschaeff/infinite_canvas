@@ -3,7 +3,7 @@ import time, pickle
 import tkinter as tk
 import numpy as np
 from tkinter import colorchooser, Button
-from functools import partial
+from functools import partial, reduce
 
 def pairs(l, loop=False):
     if not l: return
@@ -124,7 +124,8 @@ class Frame:
         if np.any(ratio > screen_dim): return False
         if np.any(ratio < 1/screen_dim): return False
         return True
-
+    def used_colors(self):
+        return set(map(lambda d: d.color, self.drawables))
     def render(self, context):
         f = partial(Viewport.world_to_screen, context=context)
         for drawable in self.drawables:
@@ -143,7 +144,6 @@ class Data:
         print("created")
         self.frames = []
         self.frame_lru = []
-        self.visible_frames = []
     def initialize(self):
         """exec always"""
         print("init")
@@ -172,6 +172,10 @@ class Data:
             filter(lambda frame: frame.visible(context), self.frames))
         if context.debug:
             print(f"Visible frames: {len(context.visible_frames)}/{len(self.frames)}")
+        context.visible_colors = reduce(set.union,
+            map(lambda f: f.used_colors(), context.visible_frames), set())
+        if context.debug:
+            print(f"Colors: {context.visible_colors}")
     def render(self, context):
         for frame in context.visible_frames:
             frame.render(context)
