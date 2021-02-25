@@ -67,10 +67,9 @@ class Viewport:
         return f"<vp: {self.p1}, {self.p2}>"
 
 class Stroke:
-    def __init__(self, path, color, style=None, width=10):
+    def __init__(self, path, color, width=10):
         self.path = path
         self.color = color
-        self.style = style
         self.width = width
     def render(self, canvas, mapper, zoom, draft=False):
         radius = 10;
@@ -83,6 +82,14 @@ class Stroke:
             p2 = mapper(self.path[-1]) + np.array([radius, radius])
             (x1, y1), (x2, y2) = p1, p2
             obj_id = canvas.create_oval(x1, y1, x2, y2, fill="#BC347F", width=self.width*3)
+            p1 = mapper(self.path[0])
+            p2 = mapper(self.path[-1])
+            (x1, y1), (x2, y2) = p1, p2
+            obj_id = canvas.create_line(x1, y1, x2, y2, fill="#FFFFFF", width=1, dash=(10, 10))
+            p1, p2 = map(mapper, self.boundingbox())
+            (x1, y1), (x2, y2) = p1, p2
+            obj_id = canvas.create_rectangle(x1, y1, x2, y2, outline="#FFFFFF", width=1, dash=(10, 10))
+            obj_id = canvas.create_oval(x1, y1, x2, y2, outline="#FFFFFF", width=1, dash=(10, 10))
         if not self.path or len(self.path) < 2: return
         p = np.concatenate(list(map(mapper, self.path)))
         obj_id = canvas.create_line(*p, fill=self.color,
@@ -92,6 +99,14 @@ class Stroke:
         p1 = path.min(axis=0)
         p2 = path.max(axis=0)
         return p1, p2
+
+#class Line(Stroke):
+    #def __init__(self, stroke):
+        #self.color = stroke.color
+        #self.width = stroke.width
+        #p1 = stroke.path[0]
+        #p2 = stroke.path[-1]
+        #self.path = [p1, p2]
 
 class Frame:
     def __init__(self, viewport):
@@ -235,6 +250,7 @@ class Sketch:
 # Bookmarks (with descr?)
 # meta data (mtime, ctime)
 # when jump to frame select it for draw/delete/undo
+# purge empty frames (do it on unpickle. so we keep the location at runtime)
 
 ## FEATURES
 # Implicit save/load, never lose sketch
