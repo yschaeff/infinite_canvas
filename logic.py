@@ -156,14 +156,15 @@ class Data:
         if not frame:
             return self.frame_lru[-1]
         i = self.frame_lru.index(frame)
-        if i == 0: return frame
+        if i == 0:
+            return self.frame_lru[-1]
         return self.frame_lru[i-1]
     def next(self, frame):
         if not frame:
             return self.frame_lru[-1]
         i = self.frame_lru.index(frame)
         if i == len(self.frames)-1:
-            return self.frame_lru[-1]
+            return self.frame_lru[0]
         return self.frame_lru[i+1]
     def push_sketch(self, context):
         if not self.frame_lru or self.frame_lru[-1].viewport != context.viewport:
