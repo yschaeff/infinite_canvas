@@ -1,8 +1,6 @@
-#!/usr/bin/env python3
 import time, pickle
 import tkinter as tk
 import numpy as np
-from tkinter import colorchooser, Button
 from functools import partial, reduce
 
 def pairs(l, loop=False):
@@ -225,10 +223,20 @@ class Sketch:
         self.stroke.render(context.canvas, f, 1, draft=True)
 
 ## TODO
-# move between frames (animate)
 # curves
+# smooth/simplify strokes
 # shapes, text
 # tutorial
 # alpha blend if zoom is to much (so that we gradually hide frame)
   # use stiple
 # rotations
+# buttons to transform last stroke to line/box/ellipse
+# export button
+# Bookmarks (with descr?)
+# meta data (mtime, ctime)
+# when jump to frame select it for draw/delete/undo
+
+## FEATURES
+# Implicit save/load, never lose sketch
+# 'infinite' canvas
+# Easy color repick
