@@ -85,11 +85,11 @@ class Stroke:
             p1 = mapper(self.path[0])
             p2 = mapper(self.path[-1])
             (x1, y1), (x2, y2) = p1, p2
-            obj_id = canvas.create_line(x1, y1, x2, y2, fill="#FFFFFF", width=1, dash=(10, 10))
+            obj_id = canvas.create_line(x1, y1, x2, y2, fill="#666666", width=1, dash=(10, 10))
             p1, p2 = map(mapper, self.boundingbox())
             (x1, y1), (x2, y2) = p1, p2
-            obj_id = canvas.create_rectangle(x1, y1, x2, y2, outline="#FFFFFF", width=1, dash=(10, 10))
-            obj_id = canvas.create_oval(x1, y1, x2, y2, outline="#FFFFFF", width=1, dash=(10, 10))
+            obj_id = canvas.create_rectangle(x1, y1, x2, y2, outline="#666666", width=1, dash=(10, 10))
+            obj_id = canvas.create_oval(x1, y1, x2, y2, outline="#666666", width=1, dash=(10, 10))
         if not self.path or len(self.path) < 2: return
         p = np.concatenate(list(map(mapper, self.path)))
         obj_id = canvas.create_line(*p, fill=self.color,
