@@ -45,6 +45,7 @@ class Context:
             ## are we performing a stroke now?
         self.drawing = False
         self.last_frame = None
+        self.timers = []
     @classmethod
     def color_picker_location(c):
         r = c.COLOR_SIZE
@@ -81,13 +82,17 @@ def moveto(context, vp):
     context.dirty = True
     context.redraw()
 
-def move_to(context, viewport, dt=200):
-    steps = int(dt*30/1000)
+def move_to(context, viewport, dt=500):
+    while context.timers:
+        context.root.after_cancel(context.timers.pop())
+    frametime_ms = 30/1000
+    steps = int(dt*frametime_ms)
     for i in range(1, steps+1):
         vp = context.viewport.interpolate(viewport, steps, i)
         f = partial(moveto, context=context, vp=vp)
         f.__name__ = ""
-        context.root.after(i*dt//steps, f)
+        timer = context.root.after(i*dt//steps, f)
+        context.timers.append(timer)
 
 def next_frame(event, context):
     context.last_frame = context.data.next(context.last_frame)
